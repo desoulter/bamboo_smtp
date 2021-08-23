@@ -27,6 +27,8 @@ defmodule Bamboo.SMTPAdapter do
         tls_cacerts: "…", # optional, DER-encoded trusted certificates
         tls_depth: 3, # optional, tls certificate chain depth
         tls_verify_fun: {&:ssl_verify_hostname.verify_fun/3, check_hostname: "example.com"}, # optional, tls verification function
+        tls_ciphers: pass a list of custom ciphers to ssl:tls_options() in case of STARTTLS (i.e [:ssl.str_to_suite('TLS_RSA_WITH_AES_256_CBC_SHA')] or :ssl.cipher_suites(:all, :'tlsv1.2')),
+        trace_fun: enable trace, i.e: &:io.format/2,
         ssl: false, # can be `true`,
         retries: 1,
         no_mx_lookups: false, # can be `true`
@@ -509,6 +511,15 @@ defmodule Bamboo.SMTPAdapter do
   defp to_gen_smtp_server_config({:tls_depth, value}, config)
        when is_integer(value) and value >= 0 do
     Keyword.update(config, :tls_options, [{:depth, value}], fn c -> [{:depth, value} | c] end)
+  end
+
+  defp to_gen_smtp_server_config({:tls_ciphers, value}, config)
+       when is_list(value) or is_binary(value) do
+    Keyword.update(config, :tls_options, [{:ciphers, value}], fn c -> [{:ciphers, value} | c] end)
+  end
+
+  defp to_gen_smtp_server_config({:trace_fun, value}, config) do
+     [{:trace_fun, value} | config]
   end
 
   defp to_gen_smtp_server_config({:tls_verify_fun, value}, config) when is_tuple(value) do
